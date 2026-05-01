@@ -129,3 +129,30 @@
 ```sql
 CREATE INDEX idx_log_goal_date ON Log(goal_id, date);
 CREATE INDEX idx_goal_user ON Goal(user_id);
+
+## MVPスコープ
+
+### 含む
+- User  
+- Goal  
+- Task  
+- Log  
+- Streak  
+
+### 含まない（今後追加予定）
+- Reward（報酬）  
+- AIログ  
+- 感情ログ  
+
+---
+
+## 今後の拡張案
+- Rewardテーブル追加  
+- AI提案履歴テーブル  
+- 感情ログ（mood tracking）  
+- 自動データ連携（外部API）  
+
+---
+
+## 備考
+- Logテーブルは本システムの中核であり、設計変更は慎重に行うこと
