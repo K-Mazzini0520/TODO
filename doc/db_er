@@ -1,0 +1,131 @@
+# ER図 / DB設計（MVP）
+
+## 概要
+
+本ドキュメントは「Habit Control App」のMVPにおけるデータベース設計（ER図）を定義する。
+
+本設計は以下を重視している：
+
+- **シンプルで拡張可能な構造**
+- **Do / Don’t の統一管理**
+- **継続性を支える高速なデータ取得**
+
+---
+
+## ER図（全体構造）
+
+`User ──< Goal ──< Task`  
+`              └─< Log`  
+`              └─< Streak`
+
+---
+
+## エンティティ一覧
+
+- **User（ユーザー）**
+- **Goal（目標：Do / Don’t）**
+- **Task（ベビーステップ）**
+- **Log（実績）**
+- **Streak（連続達成）**
+
+---
+
+## テーブル定義
+
+### 1. User
+
+| カラム名    | 型       | 説明         |
+|------------|----------|--------------|
+| id         | PK       | ユーザーID   |
+| name       | string   | ユーザー名   |
+| email      | string   | メールアドレス |
+| created_at | datetime | 作成日時     |
+
+---
+
+### 2. Goal
+
+| カラム名      | 型                 | 説明                 |
+|--------------|--------------------|----------------------|
+| id           | PK                 | 目標ID               |
+| user_id      | FK                 | ユーザーID           |
+| name         | string             | 目標名               |
+| type         | enum               | DO / DONT            |
+| frequency    | enum               | DAILY / DEADLINE     |
+| target_value | number (nullable)  | 数値目標（Don’t用）  |
+| created_at   | datetime           | 作成日時             |
+
+---
+
+### 3. Task（ベビーステップ）
+
+| カラム名    | 型       | 説明       |
+|------------|----------|------------|
+| id         | PK       | タスクID   |
+| goal_id    | FK       | 目標ID     |
+| name       | string   | タスク名   |
+| created_at | datetime | 作成日時   |
+
+> ※ Do（やること）のみ使用
+
+---
+
+### 4. Log（実績）
+
+| カラム名    | 型                | 説明                    |
+|------------|-------------------|-------------------------|
+| id         | PK                | ログID                  |
+| goal_id    | FK                | 目標ID                  |
+| date       | date              | 対象日                  |
+| status     | enum              | ◎ / ○ / ×（Do用）       |
+| value      | number (nullable) | 数値（Don’t用）         |
+| created_at | datetime          | 作成日時                |
+
+---
+
+### 5. Streak（ストリーク）
+
+| カラム名          | 型     | 説明               |
+|------------------|--------|--------------------|
+| id               | PK     | ストリークID       |
+| goal_id          | FK     | 目標ID             |
+| current_count    | number | 現在の連続日数     |
+| max_count        | number | 最大連続日数       |
+| last_updated_date| date   | 最終更新日         |
+
+---
+
+## リレーション
+
+- **User (1)**
+  - └── **(N) Goal**
+    - ├── **(N) Task**
+    - ├── **(N) Log**
+    - └── **(1) Streak**
+
+---
+
+## 設計方針
+
+### 1. GoalにDo / Don’tを統合
+
+- **同一構造で扱うことでUI・ロジックを簡素化**
+- **将来的な拡張にも対応しやすい**
+
+### 2. Logを中心とした設計
+
+- **すべての実績データをLogに集約**
+- **可視化・分析・AI機能の基盤とする**
+
+### 3. Streakの分離
+
+- **パフォーマンス最適化のため**
+- **リアルタイム表示を実現**
+
+---
+
+## インデックス設計
+
+```sql
+CREATE INDEX idx_log_goal_date ON Log(goal_id, date);
+CREATE INDEX idx_goal_user ON Goal(user_id);
