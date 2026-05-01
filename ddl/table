@@ -1,0 +1,104 @@
+-- =========================
+-- ENUM定義
+-- =========================
+
+CREATE TYPE goal_type AS ENUM ('DO', 'DONT');
+CREATE TYPE goal_frequency AS ENUM ('DAILY', 'DEADLINE');
+CREATE TYPE log_status AS ENUM ('GOOD', 'OK', 'BAD'); -- ◎ ○ ×
+
+
+-- =========================
+-- User
+-- =========================
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- =========================
+-- Goal
+-- =========================
+
+CREATE TABLE goals (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    type goal_type NOT NULL,
+    frequency goal_frequency NOT NULL,
+    target_value NUMERIC(10,2),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_goals_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
+
+-- =========================
+-- Task（ベビーステップ）
+-- =========================
+
+CREATE TABLE tasks (
+    id SERIAL PRIMARY KEY,
+    goal_id INTEGER NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_tasks_goal
+        FOREIGN KEY (goal_id)
+        REFERENCES goals(id)
+        ON DELETE CASCADE
+);
+
+
+-- =========================
+-- Log（実績）
+-- =========================
+
+CREATE TABLE logs (
+    id SERIAL PRIMARY KEY,
+    goal_id INTEGER NOT NULL,
+    log_date DATE NOT NULL,
+    status log_status,
+    value NUMERIC(10,2),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_logs_goal
+        FOREIGN KEY (goal_id)
+        REFERENCES goals(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_goal_date UNIQUE (goal_id, log_date)
+);
+
+
+-- =========================
+-- Streak（ストリーク）
+-- =========================
+
+CREATE TABLE streaks (
+    id SERIAL PRIMARY KEY,
+    goal_id INTEGER NOT NULL UNIQUE,
+    current_count INTEGER NOT NULL DEFAULT 0,
+    max_count INTEGER NOT NULL DEFAULT 0,
+    last_updated_date DATE,
+
+    CONSTRAINT fk_streaks_goal
+        FOREIGN KEY (goal_id)
+        REFERENCES goals(id)
+        ON DELETE CASCADE
+);
+
+
+-- =========================
+-- インデックス
+-- =========================
+
+CREATE INDEX idx_goals_user_id ON goals(user_id);
+CREATE INDEX idx_logs_goal_date ON logs(goal_id, log_date);
+CREATE INDEX idx_tasks_goal_id ON tasks(goal_id);
